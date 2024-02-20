@@ -1,4 +1,3 @@
-import {sample_makefile2} from "./sample_makefile";
 import fs from "node:fs/promises";
 
 export type MakeRule = {
@@ -9,13 +8,21 @@ export type MakeRule = {
 
 export type Makefile = {
 	rules: Array<MakeRule>,
+	finished_target: Set<string>,
 };
 
-let makefile_run = async (self: Makefile) => {
+type MakefileCreate = () => Makefile;
+
+export let makefile_create: MakefileCreate = () => ({
+	rules: [],
+	finished_target: new Set(),
+});
+
+export let makefile_run = async (self: Makefile) => {
 	if (self.rules.length === 0)
 		throw new Error(`no rule was found in the makefile`);
 	let first_rule = self.rules[0];
-	await eval_rule(first_rule, self.rules);
+	await eval_rule(first_rule, self.rules, self.finished_target);
 };
 
 let target_timestamp = async (target_path: string) => {
@@ -26,18 +33,20 @@ let target_timestamp = async (target_path: string) => {
 	}
 };
 
-let eval_rule = async (current_rule: MakeRule, rules: Array<MakeRule>) => {
+let eval_rule = async (current_rule: MakeRule, rules: Array<MakeRule>, finished: Set<string>) => {
+	if (finished.has(current_rule.target))
+		return;
+
 	for (let p of current_rule.prerequisites) {
 		let next_rule = rules.find(({target}) => target === p);
 		if (next_rule === undefined) {
 			await target_timestamp(p);
 		} else {
-			await eval_rule(next_rule, rules);
+			await eval_rule(next_rule, rules, finished);
 		}
 	}
-	console.log(`running command "${current_rule.commands.join(" ")}"`);
-};
 
-makefile_run(sample_makefile2)
-	.catch(console.error);
+	console.log(`running command "${current_rule.commands.join(" ")}"`);
+	finished.add(current_rule.target);
+};
 
