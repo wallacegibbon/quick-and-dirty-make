@@ -25,30 +25,33 @@ sample_makefile1.rules = [
 	},
 ];
 
+
 /*
-target1: target2 target3
-	echo building target1
-target2: target3
-	echo building target2
-target3: date.txt
-	echo building target3
- */
+date1.txt: date2.txt date3.txt
+	echo building date1.txt
+date2.txt: date3.txt
+	echo building date2.txt
+date3.txt: date4.txt
+	cp date4.txt date3.txt
+	echo building date3.txt
+*/
+
 export let sample_makefile2 = makefile_create();
 
 sample_makefile2.rules = [
 	{
-		target: "target1",
-		prerequisites: ["target2", "target3"],
-		commands: ["echo building target1"],
+		target: "date1.txt",
+		prerequisites: ["date2.txt", "date3.txt"],
+		commands: ["echo building date1.txt"],
 	},
 	{
-		target: "target2",
-		prerequisites: ["target3"],
-		commands: ["echo building target2"],
+		target: "date2.txt",
+		prerequisites: ["date3.txt"],
+		commands: ["echo building date2.txt"],
 	},
 	{
-		target: "target3",
-		prerequisites: ["date.txt"],
-		commands: ["echo building target3"],
+		target: "date3.txt",
+		prerequisites: ["date4.txt"],
+		commands: ["echo building date3.txt"],
 	},
 ];

@@ -1,14 +1,16 @@
 import fs from "node:fs/promises";
 
+type MakeTarget = string;
+
 export type MakeRule = {
-	target: string,
-	prerequisites: Array<string>,
+	target: MakeTarget,
+	prerequisites: Array<MakeTarget>,
 	commands: Array<string>,
 };
 
 export type Makefile = {
 	rules: Array<MakeRule>,
-	finished_target: Set<string>,
+	finished_target: Set<MakeTarget>,
 };
 
 type MakefileCreate = () => Makefile;
@@ -21,32 +23,74 @@ export let makefile_create: MakefileCreate = () => ({
 export let makefile_run = async (self: Makefile) => {
 	if (self.rules.length === 0)
 		throw new Error(`no rule was found in the makefile`);
+
 	let first_rule = self.rules[0];
 	await eval_rule(first_rule, self.rules, self.finished_target);
 };
 
-let target_timestamp = async (target_path: string) => {
+let target_timestamp = async (target: MakeTarget) => {
 	try {
-		return (await fs.stat(target_path)).mtime.getTime();
+		return (await fs.stat(target)).mtime.getTime();
 	} catch (e: any) {
-		throw new Error(`target ${target_path} was not found`);
+		return -1;
 	}
 };
 
-let eval_rule = async (current_rule: MakeRule, rules: Array<MakeRule>, finished: Set<string>) => {
-	if (finished.has(current_rule.target))
-		return;
+let target_file_ensure = async (target: MakeTarget) => {
+	let target_modify_time = await target_timestamp(target);
+	if (target_modify_time === -1)
+		throw new Error(`target ${target} was not found`);
+
+	return target_modify_time;
+};
+
+/*
+{
+	target1: 1234,
+	target2: {
+		target3: 4567,
+		target4: {
+			target5: 7899,
+		},
+	},
+};
+*/
+type EvalReturn = {[k: string]: number | EvalReturn};
+
+type EvalRuleFn = (current_rule: MakeRule, rules: Array<MakeRule>, finished_target: Set<MakeTarget>) =>
+	Promise<EvalReturn>;
+
+let eval_rule: EvalRuleFn = async (current_rule, rules, finished_target) => {
+	let result: EvalReturn = {};
+
+	if (finished_target.has(current_rule.target))
+		return result;
 
 	for (let p of current_rule.prerequisites) {
 		let next_rule = rules.find(({target}) => target === p);
-		if (next_rule === undefined) {
-			await target_timestamp(p);
-		} else {
-			await eval_rule(next_rule, rules, finished);
-		}
+		if (next_rule === undefined)
+			result[p] = await target_file_ensure(p);
+		else
+			result[p] = await eval_rule(next_rule, rules, finished_target);
 	}
 
-	console.log(`running command "${current_rule.commands.join(" ")}"`);
-	finished.add(current_rule.target);
+	let prerequisite_time = calculate_max_time(result);
+	let target_time = await target_timestamp(current_rule.target);
+
+	if (prerequisite_time > target_time)
+		console.log(`running "${current_rule.commands.join(" ")}"`);
+
+	finished_target.add(current_rule.target);
+	return result;
+};
+
+type CalculateMaxTimeRet = (time_tree: EvalReturn | number) => number;
+
+let calculate_max_time: CalculateMaxTimeRet = (time_tree) => {
+	if (typeof time_tree === "number")
+		return time_tree;
+	else
+		return Object.values(time_tree).map(calculate_max_time)
+			.sort((a, b) => b - a)[0] ?? 0;
 };
 
