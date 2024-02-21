@@ -55,13 +55,13 @@ let target_file_ensure = async (target: MakeTarget) => {
 	},
 };
 */
-type EvalReturn = {[k: string]: number | EvalReturn};
+type EvalReturn = Map<MakeTarget, EvalReturn | number>;
 
 type EvalRuleFn = (current_rule: MakeRule, rules: Array<MakeRule>, finished_target: Set<MakeTarget>) =>
 	Promise<EvalReturn>;
 
 let eval_rule: EvalRuleFn = async (current_rule, rules, finished_target) => {
-	let result: EvalReturn = {};
+	let result: EvalReturn = new Map();
 
 	if (finished_target.has(current_rule.target))
 		return result;
@@ -69,9 +69,9 @@ let eval_rule: EvalRuleFn = async (current_rule, rules, finished_target) => {
 	for (let p of current_rule.prerequisites) {
 		let next_rule = rules.find(({target}) => target === p);
 		if (next_rule === undefined)
-			result[p] = await target_file_ensure(p);
+			result.set(p, await target_file_ensure(p));
 		else
-			result[p] = await eval_rule(next_rule, rules, finished_target);
+			result.set(p, await eval_rule(next_rule, rules, finished_target));
 	}
 
 	let prerequisite_time = calculate_max_time(result);
@@ -90,7 +90,7 @@ let calculate_max_time: CalculateMaxTimeRet = (time_tree) => {
 	if (typeof time_tree === "number")
 		return time_tree;
 	else
-		return Object.values(time_tree).map(calculate_max_time)
+		return Array.from(time_tree.values()).map(calculate_max_time)
 			.sort((a, b) => b - a)[0] ?? 0;
 };
 
