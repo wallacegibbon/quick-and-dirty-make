@@ -11,7 +11,7 @@ type ParserFSM = {
 
 type ParserFSMCreateFn = () => ParserFSM;
 
-let parser_fsm_create: ParserFSMCreateFn = () => ({
+export let parser_fsm_create: ParserFSMCreateFn = () => ({
 	state: "normal",
 	result: [],
 	current_rule: null,
@@ -36,7 +36,6 @@ let check_command = (line: string) => {
 };
 
 let parser_step_normal = (self: ParserFSM, current_line: string) => {
-	console.log("current_line:", current_line);
 	if (check_command(current_line) !== null)
 		throw new Error(`command do not belong to any target`);
 
@@ -74,7 +73,7 @@ let parser_step = (self: ParserFSM, current_line: string) => {
 	throw new Error(`unexpected state: ${self.state}`);
 };
 
-let parser_run = async (self: ParserFSM, inputfile: string) => {
+export let parser_run = async (self: ParserFSM, inputfile: string) => {
 	let lines = (await fs.readFile(inputfile)).toString()
 		.split("\n")
 		.filter(x => x.trim())
@@ -82,10 +81,7 @@ let parser_run = async (self: ParserFSM, inputfile: string) => {
 
 	for (let line of lines)
 		parser_step(self, line);
+
+	return self.result;
 };
-
-let parser_fsm = parser_fsm_create();
-
-parser_run(parser_fsm, "a.mk")
-	.then(() => console.log(parser_fsm.result));
 

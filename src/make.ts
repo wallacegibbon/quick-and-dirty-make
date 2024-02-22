@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import child_process from "node:child_process";
 
 type MakeTarget = string;
 
@@ -77,12 +78,19 @@ let eval_rule: EvalRuleFn = async (current_rule, rules, finished_target) => {
 	let prerequisite_time = calculate_max_time(result);
 	let target_time = await target_timestamp(current_rule.target);
 
-	if (prerequisite_time > target_time)
-		console.log(`running "${current_rule.commands.join(" ")}"`);
+	if (prerequisite_time > target_time) {
+		for (let c of current_rule.commands)
+			await run_command(c);
+	}
 
 	finished_target.add(current_rule.target);
 	return result;
 };
+
+let run_command = (command: string) => new Promise((res, rej) => {
+	console.log(`running "${command}"`);
+	child_process.exec(command, (error, _out, _err) => error ? rej(error) : res(0));
+});
 
 type CalculateMaxTimeRet = (time_tree: EvalReturn | number) => number;
 
