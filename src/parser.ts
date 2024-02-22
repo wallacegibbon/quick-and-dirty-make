@@ -6,7 +6,6 @@ type ParserState = "normal" | "wait_for_command";
 type ParserFSM = {
 	state: ParserState,
 	result: Array<MakeRule>,
-	cursor: number,
 	current_rule: MakeRule | null,
 };
 
@@ -15,7 +14,6 @@ type ParserFSMCreateFn = () => ParserFSM;
 let parser_fsm_create: ParserFSMCreateFn = () => ({
 	state: "normal",
 	result: [],
-	cursor: 0,
 	current_rule: null,
 });
 
