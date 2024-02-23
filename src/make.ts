@@ -104,11 +104,13 @@ let run_command_and_print: RunCommandAndPrintFn = async (command) => {
 
 type CalculateMaxTimeFn = (time_tree: EvalReturn | number) => number;
 
+/// TODO: The result of this function should be memorized if you want to optimize the performance.
 let calculate_max_time: CalculateMaxTimeFn = (time_tree) => {
 	if (typeof time_tree === "number")
 		return time_tree;
 	else
-		return Array.from(time_tree.values()).map(calculate_max_time)
+		return Array.from(time_tree.values())
+			.map(calculate_max_time)
 			.reduce((acc, n) => acc > n ? acc : n, 0);
 };
 
