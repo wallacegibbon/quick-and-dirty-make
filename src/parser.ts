@@ -57,7 +57,6 @@ let parser_step_wait_for_command = (self: ParserFSM, current_line: string) => {
 	}
 
 	let command = check_command(current_line);
-
 	if (command !== null)
 		self.current_rule.commands.push(command);
 
