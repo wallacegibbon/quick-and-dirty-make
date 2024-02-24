@@ -80,27 +80,19 @@ let eval_rule: EvalRuleFn = async (current_rule, rules, finished_target) => {
 
 	if (prerequisite_time > target_time) {
 		for (let c of current_rule.commands)
-			await run_command_and_print(c);
+			console.log(await run_command(c));
 	}
 
 	finished_target.add(current_rule.target);
 	return result;
 };
 
-type RunCommandFn = (command: string) => Promise<{out: string, err: string}>;
+type RunCommandFn = (command: string) => Promise<string>;
 
 let run_command: RunCommandFn = (command) => new Promise((res, rej) => {
 	console.log(`\t>>> running "${command}"`);
-	child_process.exec(command, (error, out, err) => error ? rej(error) : res({out, err}));
+	child_process.exec(command, (error, out, _err) => error ? rej(error) : res(out));
 });
-
-type RunCommandAndPrintFn = (command: string) => Promise<void>;
-
-let run_command_and_print: RunCommandAndPrintFn = async (command) => {
-	let {out, err} = await run_command(command);
-	console.log(out);
-	console.error(err);
-};
 
 type CalculateMaxTimeFn = (time_tree: EvalReturn | number) => number;
 
@@ -111,6 +103,6 @@ let calculate_max_time: CalculateMaxTimeFn = (time_tree) => {
 	else
 		return Array.from(time_tree.values())
 			.map(calculate_max_time)
-			.reduce((acc, n) => acc > n ? acc : n, 0);
+			.reduce((acc, n) => acc > n ? acc : n, -1);
 };
 
