@@ -39,11 +39,11 @@ let parser_step_normal = (self: ParserFSM, current_line: string) => {
 	if (check_command(current_line) !== null)
 		throw new Error(`command do not belong to any target`);
 
-	let make_rule = check_target(current_line);
-	if (make_rule === null)
+	let rule = check_target(current_line);
+	if (rule === null)
 		throw new Error(`syntax error`);
 
-	self.current_rule = make_rule;
+	self.current_rule = rule;
 	self.state = "wait_for_command";
 };
 
@@ -52,6 +52,7 @@ let parser_step_wait_for_command = (self: ParserFSM, current_line: string) => {
 		throw new Error(`current_rule should not be null here`);
 
 	if (check_target(current_line)) {
+		self.result.push(self.current_rule);
 		parser_step_normal(self, current_line);
 		return;
 	}
@@ -59,8 +60,6 @@ let parser_step_wait_for_command = (self: ParserFSM, current_line: string) => {
 	let command = check_command(current_line);
 	if (command !== null)
 		self.current_rule.commands.push(command);
-
-	self.result.push(self.current_rule);
 };
 
 let parser_step = (self: ParserFSM, current_line: string) => {
@@ -80,6 +79,9 @@ export let parser_run = async (self: ParserFSM, inputfile: string) => {
 
 	for (let line of lines)
 		parser_step(self, line);
+
+	if (self.current_rule)
+		self.result.push(self.current_rule);
 
 	return self.result;
 };
