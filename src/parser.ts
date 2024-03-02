@@ -9,13 +9,11 @@ type ParserFSM = {
 	current_rule: MakeRule | null,
 };
 
-type ParserFSMCreateFn = () => ParserFSM;
-
-export let parser_fsm_create: ParserFSMCreateFn = () => ({
+export let parser_fsm_create = () => ({
 	state: "normal",
 	result: [],
 	current_rule: null,
-});
+}) as ParserFSM;
 
 type CheckTargetFn = (line: string) => MakeRule | null;
 
@@ -80,9 +78,7 @@ export let parser_run = async (self: ParserFSM, inputfile: string) => {
 	for (let line of lines)
 		parser_step(self, line);
 
-	if (self.current_rule)
-		self.result.push(self.current_rule);
-
+	self.result.push(self.current_rule!);
 	return self.result;
 };
 

@@ -14,12 +14,10 @@ export type Makefile = {
 	finished_target: Set<MakeTarget>,
 };
 
-type MakefileCreateFn = () => Makefile;
-
-export let makefile_create: MakefileCreateFn = () => ({
+export let makefile_create = () => ({
 	rules: [],
 	finished_target: new Set(),
-});
+}) as Makefile;
 
 export let makefile_run = async (self: Makefile) => {
 	if (self.rules.length === 0)
@@ -87,9 +85,7 @@ let eval_rule: EvalRuleFn = async (current_rule, rules, finished_target) => {
 	return result;
 };
 
-type RunCommandFn = (command: string) => Promise<string>;
-
-let run_command: RunCommandFn = (command) => new Promise((res, rej) => {
+let run_command = (command: string) => new Promise<string>((res, rej) => {
 	console.log(`\t>>> running "${command}"`);
 	child_process.exec(command, (error, out, _err) => error ? rej(error) : res(out));
 });
