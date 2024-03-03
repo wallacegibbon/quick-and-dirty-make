@@ -9,11 +9,11 @@ type ParserFSM = {
 	current_rule: MakeRule | null,
 };
 
-export let parser_fsm_create = () => ({
+export let parser_fsm_create: () => ParserFSM = () => ({
 	state: "normal",
 	result: [],
 	current_rule: null,
-}) as ParserFSM;
+});
 
 type CheckTargetFn = (line: string) => MakeRule | null;
 

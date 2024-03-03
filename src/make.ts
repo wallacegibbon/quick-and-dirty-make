@@ -14,10 +14,10 @@ export type Makefile = {
 	finished_target: Set<MakeTarget>,
 };
 
-export let makefile_create = () => ({
+export let makefile_create: () => Makefile = () => ({
 	rules: [],
 	finished_target: new Set(),
-}) as Makefile;
+});
 
 export let makefile_run = async (self: Makefile) => {
 	if (self.rules.length === 0)
